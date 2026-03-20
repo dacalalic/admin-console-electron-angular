@@ -1,5 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
+import { SessionStore } from './session.store';
+
+const sessionStore = new SessionStore();
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -21,6 +24,9 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   ipcMain.handle('app:get-version', () => app.getVersion());
+  ipcMain.handle('session:get', () => sessionStore.getSession());
+  ipcMain.handle('session:save', (_, user) => sessionStore.saveSession(user));
+  ipcMain.handle('session:clear', () => sessionStore.clearSession());
 
   createWindow();
 

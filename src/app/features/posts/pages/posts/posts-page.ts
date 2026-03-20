@@ -21,8 +21,8 @@ export class PostsPageComponent {
 
   private readonly router = inject(Router);
 
-  signOut(): void {
-    this.authFacade.signOut();
-    void this.router.navigate(['/sign-in']);
+  async signOut(): Promise<void> {
+    await this.authFacade.signOut();
+    await this.router.navigate(['/sign-in']);
   }
 }
