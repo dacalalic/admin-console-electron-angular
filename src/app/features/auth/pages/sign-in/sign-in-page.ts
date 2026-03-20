@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthFacade } from '../../data-access/auth-facade.service';
 
 @Component({
   selector: 'app-sign-in-page',
@@ -20,13 +21,14 @@ import { Router } from '@angular/router';
   `,
 })
 export class SignInPageComponent {
+  private readonly router = inject(Router);
+  private readonly authFacade = inject(AuthFacade);
+
   protected readonly form = new FormGroup({
     userId: new FormControl<number | null>(null, {
       validators: [Validators.required, Validators.min(1)],
     }),
   });
-
-  constructor(private readonly router: Router) {}
 
   submit(): void {
     if (this.form.invalid) {
@@ -34,6 +36,13 @@ export class SignInPageComponent {
       return;
     }
 
+    const userId = this.form.controls.userId.value;
+
+    if (userId === null) {
+      return;
+    }
+
+    this.authFacade.signIn(userId);
     void this.router.navigate(['/posts']);
   }
 }
