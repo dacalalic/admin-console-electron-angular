@@ -1,0 +1,39 @@
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-sign-in-page',
+  imports: [ReactiveFormsModule],
+  template: `
+    <main>
+      <h1>Admin Console</h1>
+      <h2>Sign in as user</h2>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <label for="userId">User ID</label>
+        <input id="userId" type="number" formControlName="userId" />
+
+        <button type="submit" [disabled]="form.invalid">Continue</button>
+      </form>
+    </main>
+  `,
+})
+export class SignInPageComponent {
+  protected readonly form = new FormGroup({
+    userId: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
+  });
+
+  constructor(private readonly router: Router) {}
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    void this.router.navigate(['/posts']);
+  }
+}
