@@ -1,20 +1,32 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { User } from '../../../shared/models/user.model';
+import { AuthApiService } from './auth-api.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthFacade {
-  private readonly currentUserIdSignal = signal<number | null>(null);
+  private readonly authApiService = inject(AuthApiService);
 
-  readonly currentUserId = this.currentUserIdSignal.asReadonly();
+  private readonly currentUserSignal = signal<User | null>(null);
 
-  readonly isSignedIn = computed(() => this.currentUserIdSignal() !== null);
+  readonly currentUser = this.currentUserSignal.asReadonly();
 
-  signIn(userId: number): void {
-    this.currentUserIdSignal.set(userId);
+  readonly isSignedIn = computed(() => this.currentUserSignal() !== null);
+
+  async signIn(userId: number): Promise<boolean> {
+    try {
+      const user = await firstValueFrom(this.authApiService.getUserById(userId));
+      this.currentUserSignal.set(user);
+      return true;
+    } catch {
+      this.currentUserSignal.set(null);
+      return false;
+    }
   }
 
   signOut(): void {
-    this.currentUserIdSignal.set(null);
+    this.currentUserSignal.set(null);
   }
 }

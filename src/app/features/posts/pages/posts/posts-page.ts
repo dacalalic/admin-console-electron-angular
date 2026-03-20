@@ -7,7 +7,11 @@ import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
   template: `
     <main>
       <h1>Posts</h1>
-      <p>Signed in as user {{ authFacade.currentUserId() }}</p>
+
+      @if (authFacade.currentUser(); as user) {
+        <p>Signed in as {{ user.name }} ({{ user.email }})</p>
+      }
+
       <button type="button" (click)="signOut()">Sign out</button>
     </main>
   `,

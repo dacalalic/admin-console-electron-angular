@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../data-access/auth-facade.service';
@@ -15,7 +15,13 @@ import { AuthFacade } from '../../data-access/auth-facade.service';
         <label for="userId">User ID</label>
         <input id="userId" type="number" formControlName="userId" />
 
-        <button type="submit" [disabled]="form.invalid">Continue</button>
+        @if (errorMessage()) {
+          <p>{{ errorMessage() }}</p>
+        }
+
+        <button type="submit" [disabled]="form.invalid || isSubmitting()">
+          {{ isSubmitting() ? 'Loading...' : 'Continue' }}
+        </button>
       </form>
     </main>
   `,
@@ -30,7 +36,10 @@ export class SignInPageComponent {
     }),
   });
 
-  submit(): void {
+  protected readonly isSubmitting = signal(false);
+  protected readonly errorMessage = signal('');
+
+  async submit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -42,7 +51,18 @@ export class SignInPageComponent {
       return;
     }
 
-    this.authFacade.signIn(userId);
+    this.errorMessage.set('');
+    this.isSubmitting.set(true);
+
+    const didSignIn = await this.authFacade.signIn(userId);
+
+    this.isSubmitting.set(false);
+
+    if (!didSignIn) {
+      this.errorMessage.set('User not found.');
+      return;
+    }
+
     void this.router.navigate(['/posts']);
   }
 }
