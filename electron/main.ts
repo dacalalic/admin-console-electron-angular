@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 
 function createWindow(): void {
@@ -20,6 +20,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle('app:get-version', () => app.getVersion());
+
   createWindow();
 
   app.on('activate', () => {
