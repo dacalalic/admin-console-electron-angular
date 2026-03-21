@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
 import { PostsFacade } from '../../data-access/posts-facade.service';
@@ -258,7 +258,7 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
     `,
   ],
 })
-export class PostsPageComponent implements OnInit {
+export class PostsPageComponent implements OnInit, OnDestroy {
   protected readonly authFacade = inject(AuthFacade);
   protected readonly postsFacade = inject(PostsFacade);
   protected readonly searchQuery = signal('');
@@ -282,6 +282,10 @@ export class PostsPageComponent implements OnInit {
     await this.postsFacade.loadPosts();
   }
 
+  ngOnDestroy(): void {
+    this.postsFacade.stopAutoRefresh();
+  }
+
   async countComments(postId: number): Promise<void> {
     await this.postsFacade.countComments(postId);
   }
@@ -292,6 +296,7 @@ export class PostsPageComponent implements OnInit {
   }
 
   async signOut(): Promise<void> {
+    this.postsFacade.stopAutoRefresh();
     await this.authFacade.signOut();
     await this.router.navigate(['/sign-in']);
   }

@@ -105,8 +105,7 @@ export class AppDatabase {
     ON CONFLICT(id) DO UPDATE SET
       user_id = excluded.user_id,
       title = excluded.title,
-      body = excluded.body,
-      comments = excluded.comments
+      body = excluded.body
   `);
 
     const transaction = this.db.transaction((postsToSave: DbPost[]) => {

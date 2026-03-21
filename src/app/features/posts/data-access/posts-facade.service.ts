@@ -10,6 +10,8 @@ import { PostsApiService } from './posts-api.service';
   providedIn: 'root',
 })
 export class PostsFacade {
+  private static readonly REFRESH_INTERVAL_MS = 10_000;
+
   private readonly postsApiService = inject(PostsApiService);
   private readonly desktopService = inject(DesktopService);
   private readonly authFacade = inject(AuthFacade);
@@ -19,6 +21,8 @@ export class PostsFacade {
   private readonly isLoadingSignal = signal(false);
   private readonly errorMessageSignal = signal('');
   private readonly countingPostIdsSignal = signal<number[]>([]);
+  private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
+  private isRefreshingFromServer = false;
 
   readonly posts = this.postsSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
@@ -48,24 +52,34 @@ export class PostsFacade {
           userId: currentUser.id,
           postsCount: savedPosts.length,
         });
-        return;
       }
-
-      const apiPosts = await firstValueFrom(this.postsApiService.getPostsByUserId(currentUser.id));
-
-      await this.desktopService.savePosts(apiPosts);
-      this.postsSignal.set(apiPosts);
-      this.logger.info('app-flow', 'Loaded posts from HTTP API and cached to database.', {
-        userId: currentUser.id,
-        postsCount: apiPosts.length,
-      });
     } catch {
-      this.postsSignal.set([]);
-      this.errorMessageSignal.set('Failed to load posts.');
+      this.logger.error('app-flow', 'Loading posts from local cache failed.', {
+        userId: currentUser.id,
+      });
+    }
+
+    try {
+      await this.syncPostsFromServer(currentUser.id);
+      this.startAutoRefresh(currentUser.id);
+    } catch {
+      if (this.postsSignal().length === 0) {
+        this.errorMessageSignal.set('Failed to load posts.');
+      }
       this.logger.error('app-flow', 'Posts loading failed.', { userId: currentUser.id });
     } finally {
       this.isLoadingSignal.set(false);
     }
+  }
+
+  stopAutoRefresh(): void {
+    if (this.refreshIntervalId === null) {
+      return;
+    }
+
+    clearInterval(this.refreshIntervalId);
+    this.refreshIntervalId = null;
+    this.logger.info('app-flow', 'Stopped automatic server refresh for posts.');
   }
 
   isCountingComments(postId: number): boolean {
@@ -98,4 +112,47 @@ export class PostsFacade {
       this.countingPostIdsSignal.update((ids) => ids.filter((id) => id !== postId));
     }
   }
+
+  private startAutoRefresh(userId: number): void {
+    if (this.refreshIntervalId !== null) {
+      return;
+    }
+
+    this.refreshIntervalId = setInterval(() => {
+      void this.syncPostsFromServer(userId).catch(() => {
+        this.errorMessageSignal.set('Failed to refresh posts from server.');
+      });
+    }, PostsFacade.REFRESH_INTERVAL_MS);
+
+    this.logger.info('app-flow', 'Started automatic server refresh for posts.', {
+      userId,
+      intervalMs: PostsFacade.REFRESH_INTERVAL_MS,
+    });
+  }
+
+  private async syncPostsFromServer(userId: number): Promise<void> {
+    if (this.isRefreshingFromServer) {
+      return;
+    }
+
+    this.isRefreshingFromServer = true;
+
+    try {
+      const apiPosts = await firstValueFrom(this.postsApiService.getPostsByUserId(userId));
+      await this.desktopService.savePosts(apiPosts);
+      const persistedPosts = await this.desktopService.getPostsByUserId(userId);
+      this.postsSignal.set(persistedPosts);
+      this.errorMessageSignal.set('');
+      this.logger.info('app-flow', 'Refetched posts from server and cached them.', {
+        userId,
+        postsCount: persistedPosts.length,
+      });
+    } catch {
+      this.logger.error('app-flow', 'Server refetch for posts failed.', { userId });
+      throw new Error('Failed to refetch posts.');
+    } finally {
+      this.isRefreshingFromServer = false;
+    }
+  }
+
 }
