@@ -2,3 +2,4 @@ npm run lint
 npm run format
 npm run build:web
 npm run build:electron
+npm run test

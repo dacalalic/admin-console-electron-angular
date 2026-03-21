@@ -19,6 +19,7 @@ import { AuthFacade } from '../../data-access/auth-facade.service';
           <label for="userId">User ID</label>
           <input
             id="userId"
+            data-testid="sign-in-user-id"
             type="number"
             formControlName="userId"
             min="1"
@@ -31,10 +32,14 @@ import { AuthFacade } from '../../data-access/auth-facade.service';
           }
 
           @if (errorMessage()) {
-            <p class="alert-error">{{ errorMessage() }}</p>
+            <p class="alert-error" data-testid="sign-in-error">{{ errorMessage() }}</p>
           }
 
-          <button type="submit" [disabled]="form.invalid || isSubmitting()">
+          <button
+            type="submit"
+            data-testid="sign-in-submit"
+            [disabled]="form.invalid || isSubmitting()"
+          >
             {{ isSubmitting() ? 'Loading...' : 'Continue' }}
           </button>
         </form>

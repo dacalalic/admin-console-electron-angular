@@ -19,13 +19,15 @@ export interface DbPost {
 export class AppDatabase {
   private readonly db: Database.Database;
 
-  constructor() {
-    const dbPath = path.join(app.getPath('userData'), 'admin-console.db');
-
+  constructor(dbPath = path.join(app.getPath('userData'), 'admin-console.db')) {
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
 
     this.initialize();
+  }
+
+  close(): void {
+    this.db.close();
   }
 
   private initialize(): void {

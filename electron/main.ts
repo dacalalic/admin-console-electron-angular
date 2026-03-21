@@ -13,6 +13,11 @@ interface LogEntry {
 }
 
 let database: AppDatabase;
+const e2eUserDataDir = process.env.E2E_USER_DATA_DIR;
+
+if (e2eUserDataDir) {
+  app.setPath('userData', e2eUserDataDir);
+}
 
 function writeStructuredLog(entry: LogEntry): void {
   const payload = {

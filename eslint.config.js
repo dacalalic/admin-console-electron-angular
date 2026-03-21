@@ -4,7 +4,14 @@ const angular = require('angular-eslint');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist/**', 'dist-electron/**', 'node_modules/**', 'out-tsc/**'],
+    ignores: [
+      'dist/**',
+      'dist-electron/**',
+      'node_modules/**',
+      'out-tsc/**',
+      'coverage/**',
+      'e2e/test-output/**',
+    ],
   },
   {
     files: ['**/*.ts'],

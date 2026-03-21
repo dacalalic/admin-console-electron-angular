@@ -20,7 +20,9 @@ import { Post } from '../../../../shared/models/post.model';
             }
           </div>
 
-          <button class="ghost" type="button" (click)="signOut()">Sign out</button>
+          <button class="ghost" type="button" data-testid="posts-sign-out" (click)="signOut()">
+            Sign out
+          </button>
         </header>
 
         @if (postsFacade.isLoading()) {
@@ -35,6 +37,7 @@ import { Post } from '../../../../shared/models/post.model';
           <label for="post-search">Search posts</label>
           <input
             id="post-search"
+            data-testid="posts-search-input"
             type="search"
             placeholder="Search by title or body..."
             [value]="searchQuery()"
@@ -47,6 +50,8 @@ import { Post } from '../../../../shared/models/post.model';
             @for (post of filteredPosts(); track post.id) {
               <li
                 class="post-card"
+                data-testid="post-card"
+                [attr.data-post-id]="post.id"
                 role="button"
                 tabindex="0"
                 (click)="openPostModal(post)"
@@ -58,11 +63,12 @@ import { Post } from '../../../../shared/models/post.model';
                   <p class="post-body">{{ post.body }}</p>
 
                   <div class="post-footer">
-                    <p class="comment-count">
+                    <p class="comment-count" data-testid="post-comments-count">
                       Comments: <strong>{{ post.comments ?? 'Not counted yet' }}</strong>
                     </p>
                     <button
                       type="button"
+                      data-testid="count-comments-button"
                       [disabled]="postsFacade.isCountingComments(post.id)"
                       (click)="countComments(post.id, $event)"
                     >
