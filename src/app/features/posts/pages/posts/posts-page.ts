@@ -13,7 +13,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
             <p class="eyebrow">Dashboard</p>
             <h1>Posts</h1>
             @if (authFacade.currentUser(); as user) {
-              <p class="user-meta">Signed in as <strong>{{ user.name }}</strong> · {{ user.email }}</p>
+              <p class="user-meta">
+                Signed in as <strong>{{ user.name }}</strong> · {{ user.email }}
+              </p>
             }
           </div>
 
@@ -56,7 +58,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
                       [disabled]="postsFacade.isCountingComments(post.id)"
                       (click)="countComments(post.id)"
                     >
-                      {{ postsFacade.isCountingComments(post.id) ? 'Counting...' : 'Count Comments' }}
+                      {{
+                        postsFacade.isCountingComments(post.id) ? 'Counting...' : 'Count Comments'
+                      }}
                     </button>
                   </div>
                 </article>
@@ -167,7 +171,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         border-radius: 11px;
         padding: 0.66rem 0.8rem;
         outline: none;
-        transition: border-color 160ms ease, box-shadow 160ms ease;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease;
       }
 
       .search-wrap input:focus {
@@ -189,7 +195,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         background: var(--surface);
         box-shadow: var(--shadow-card);
         padding: 1rem;
-        transition: transform 160ms ease, box-shadow 160ms ease;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease;
       }
 
       .post-card:hover {
@@ -229,7 +237,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         font-weight: 700;
         padding: 0.6rem 0.9rem;
         cursor: pointer;
-        transition: transform 140ms ease, filter 140ms ease;
+        transition:
+          transform 140ms ease,
+          filter 140ms ease;
       }
 
       button:hover:not(:disabled) {
@@ -271,8 +281,7 @@ export class PostsPageComponent implements OnInit, OnDestroy {
     }
 
     return posts.filter(
-      (post) =>
-        post.title.toLowerCase().includes(query) || post.body.toLowerCase().includes(query),
+      (post) => post.title.toLowerCase().includes(query) || post.body.toLowerCase().includes(query),
     );
   });
 

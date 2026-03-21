@@ -104,7 +104,9 @@ import { AuthFacade } from '../../data-access/auth-facade.service';
         border-radius: 12px;
         padding: 0.8rem 0.9rem;
         outline: none;
-        transition: border-color 160ms ease, box-shadow 160ms ease;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease;
       }
 
       input::placeholder {
@@ -147,7 +149,9 @@ import { AuthFacade } from '../../data-access/auth-facade.service';
         font-weight: 700;
         padding: 0.82rem 1rem;
         cursor: pointer;
-        transition: transform 140ms ease, filter 140ms ease;
+        transition:
+          transform 140ms ease,
+          filter 140ms ease;
       }
 
       button:hover:not(:disabled) {

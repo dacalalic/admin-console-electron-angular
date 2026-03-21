@@ -154,5 +154,4 @@ export class PostsFacade {
       this.isRefreshingFromServer = false;
     }
   }
-
 }

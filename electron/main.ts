@@ -42,14 +42,6 @@ function logInfo(
   writeStructuredLog({ level: 'info', source, message, context });
 }
 
-function logWarn(
-  source: string,
-  message: string,
-  context?: Record<string, string | number | boolean | null | undefined>,
-): void {
-  writeStructuredLog({ level: 'warn', source, message, context });
-}
-
 function logError(
   source: string,
   message: string,
