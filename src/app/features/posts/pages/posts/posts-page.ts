@@ -30,6 +30,13 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
               <h2>{{ post.title }}</h2>
               <p>{{ post.body }}</p>
               <p>Comments: {{ post.comments ?? 'Not counted yet' }}</p>
+              <button
+                type="button"
+                [disabled]="postsFacade.isCountingComments(post.id)"
+                (click)="countComments(post.id)"
+              >
+                {{ postsFacade.isCountingComments(post.id) ? 'Counting...' : 'Count Comments' }}
+              </button>
             </li>
           }
         </ul>
@@ -47,6 +54,10 @@ export class PostsPageComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.postsFacade.loadPosts();
+  }
+
+  async countComments(postId: number): Promise<void> {
+    await this.postsFacade.countComments(postId);
   }
 
   async signOut(): Promise<void> {

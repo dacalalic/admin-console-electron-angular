@@ -16,10 +16,12 @@ export class PostsFacade {
   private readonly postsSignal = signal<Post[]>([]);
   private readonly isLoadingSignal = signal(false);
   private readonly errorMessageSignal = signal('');
+  private readonly countingPostIdsSignal = signal<number[]>([]);
 
   readonly posts = this.postsSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
   readonly errorMessage = this.errorMessageSignal.asReadonly();
+  readonly countingPostIds = this.countingPostIdsSignal.asReadonly();
 
   async loadPosts(): Promise<void> {
     const currentUser = this.authFacade.currentUser();
@@ -34,22 +36,47 @@ export class PostsFacade {
     this.errorMessageSignal.set('');
 
     try {
-      const posts = await firstValueFrom(this.postsApiService.getPostsByUserId(currentUser.id));
-
-      this.postsSignal.set(posts);
-      await this.desktopService.savePosts(posts);
-    } catch {
       const savedPosts = await this.desktopService.getPostsByUserId(currentUser.id);
 
       if (savedPosts.length > 0) {
         this.postsSignal.set(savedPosts);
-        this.errorMessageSignal.set('Showing saved posts because refresh failed.');
-      } else {
-        this.postsSignal.set([]);
-        this.errorMessageSignal.set('Failed to load posts.');
+        return;
       }
+
+      const apiPosts = await firstValueFrom(this.postsApiService.getPostsByUserId(currentUser.id));
+
+      await this.desktopService.savePosts(apiPosts);
+      this.postsSignal.set(apiPosts);
+    } catch {
+      this.postsSignal.set([]);
+      this.errorMessageSignal.set('Failed to load posts.');
     } finally {
       this.isLoadingSignal.set(false);
+    }
+  }
+
+  isCountingComments(postId: number): boolean {
+    return this.countingPostIdsSignal().includes(postId);
+  }
+
+  async countComments(postId: number): Promise<void> {
+    this.errorMessageSignal.set('');
+    this.countingPostIdsSignal.update((ids) => [...ids, postId]);
+
+    try {
+      const commentsCount = await firstValueFrom(
+        this.postsApiService.getCommentsCountByPostId(postId),
+      );
+
+      this.postsSignal.update((posts) =>
+        posts.map((post) => (post.id === postId ? { ...post, comments: commentsCount } : post)),
+      );
+
+      await this.desktopService.updatePostComments(postId, commentsCount);
+    } catch {
+      this.errorMessageSignal.set(`Failed to count comments for post ${postId}.`);
+    } finally {
+      this.countingPostIdsSignal.update((ids) => ids.filter((id) => id !== postId));
     }
   }
 }

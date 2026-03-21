@@ -10,6 +10,10 @@ interface JsonPlaceholderPostDto {
   body: string;
 }
 
+interface JsonPlaceholderCommentDto {
+  id: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -18,7 +22,9 @@ export class PostsApiService {
 
   getPostsByUserId(userId: number): Observable<Post[]> {
     return this.http
-      .get<JsonPlaceholderPostDto[]>(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`)
+      .get<JsonPlaceholderPostDto[]>(
+        `https://jsonplaceholder.typicode.com/posts?userId=${userId}`,
+      )
       .pipe(
         map((posts) =>
           posts.map((post) => ({
@@ -30,5 +36,13 @@ export class PostsApiService {
           })),
         ),
       );
+  }
+
+  getCommentsCountByPostId(postId: number): Observable<number> {
+    return this.http
+      .get<JsonPlaceholderCommentDto[]>(
+        `https://jsonplaceholder.typicode.com/comments?postId=${postId}`,
+      )
+      .pipe(map((comments) => comments.length));
   }
 }
