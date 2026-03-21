@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
 import { PostsFacade } from '../../data-access/posts-facade.service';
+import { Post } from '../../../../shared/models/post.model';
 
 @Component({
   selector: 'app-posts-page',
@@ -44,7 +45,14 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         @if (filteredPosts().length > 0) {
           <ul class="posts-grid">
             @for (post of filteredPosts(); track post.id) {
-              <li class="post-card">
+              <li
+                class="post-card"
+                role="button"
+                tabindex="0"
+                (click)="openPostModal(post)"
+                (keydown.enter)="openPostModal(post)"
+                (keydown.space)="openPostModal(post)"
+              >
                 <article>
                   <h2>{{ post.title }}</h2>
                   <p class="post-body">{{ post.body }}</p>
@@ -56,7 +64,7 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
                     <button
                       type="button"
                       [disabled]="postsFacade.isCountingComments(post.id)"
-                      (click)="countComments(post.id)"
+                      (click)="countComments(post.id, $event)"
                     >
                       {{
                         postsFacade.isCountingComments(post.id) ? 'Counting...' : 'Count Comments'
@@ -73,6 +81,28 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
           <p class="status">No posts found.</p>
         }
       </section>
+
+      @if (selectedPost(); as post) {
+        <section class="modal-backdrop" (click)="closePostModal()">
+          <article
+            class="post-modal"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="post.title"
+            (click)="$event.stopPropagation()"
+          >
+            <header class="post-modal-header">
+              <h2>{{ post.title }}</h2>
+            </header>
+            <p class="post-modal-body">{{ post.body }}</p>
+            <div class="post-modal-actions">
+              <button class="ghost modal-close" type="button" (click)="closePostModal()">
+                Close
+              </button>
+            </div>
+          </article>
+        </section>
+      }
     </main>
   `,
   styles: [
@@ -195,6 +225,9 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         background: var(--surface);
         box-shadow: var(--shadow-card);
         padding: 1rem;
+        height: 235px;
+        cursor: pointer;
+        outline: none;
         transition:
           transform 160ms ease,
           box-shadow 160ms ease;
@@ -203,6 +236,17 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
       .post-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 14px 24px rgba(31, 42, 33, 0.11);
+      }
+
+      .post-card:focus-visible {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(31, 143, 99, 0.22);
+      }
+
+      .post-card article {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
       }
 
       h2 {
@@ -214,6 +258,11 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         margin: 0.55rem 0 0.85rem;
         line-height: 1.48;
         color: #37443a;
+        text-align: justify;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
       }
 
       .post-footer {
@@ -222,6 +271,7 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         align-items: center;
         justify-content: space-between;
         gap: 0.7rem;
+        margin-top: auto;
       }
 
       .comment-count {
@@ -252,6 +302,64 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         opacity: 0.6;
       }
 
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: rgba(17, 28, 20, 0.5);
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+      }
+
+      .post-modal {
+        width: min(680px, 100%);
+        max-height: 85dvh;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--line);
+        background: #fffcf8;
+        box-shadow: 0 20px 36px rgba(14, 24, 18, 0.22);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .post-modal-header {
+        display: flex;
+        gap: 0.8rem;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+      }
+
+      .post-modal-header h2 {
+        margin: 0;
+      }
+
+      .modal-close {
+        flex-shrink: 0;
+      }
+
+      .post-modal-body {
+        margin: 0;
+        white-space: normal;
+        line-height: 1.55;
+        color: #2f3d33;
+        text-align: justify;
+        text-justify: inter-word;
+        hyphens: auto;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .post-modal-actions {
+        margin-top: 0.9rem;
+        display: flex;
+        justify-content: flex-end;
+      }
+
       @media (min-width: 800px) {
         .posts-shell {
           padding: 2rem 1.4rem;
@@ -272,6 +380,7 @@ export class PostsPageComponent implements OnInit, OnDestroy {
   protected readonly authFacade = inject(AuthFacade);
   protected readonly postsFacade = inject(PostsFacade);
   protected readonly searchQuery = signal('');
+  protected readonly selectedPost = signal<Post | null>(null);
   protected readonly filteredPosts = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const posts = this.postsFacade.posts();
@@ -295,13 +404,22 @@ export class PostsPageComponent implements OnInit, OnDestroy {
     this.postsFacade.stopAutoRefresh();
   }
 
-  async countComments(postId: number): Promise<void> {
+  async countComments(postId: number, event?: Event): Promise<void> {
+    event?.stopPropagation();
     await this.postsFacade.countComments(postId);
   }
 
   onSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement | null;
     this.searchQuery.set(target?.value ?? '');
+  }
+
+  openPostModal(post: Post): void {
+    this.selectedPost.set(post);
+  }
+
+  closePostModal(): void {
+    this.selectedPost.set(null);
   }
 
   async signOut(): Promise<void> {
