@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Post } from '../../shared/models/post.model';
 import { User } from '../../shared/models/user.model';
 
 @Injectable({
@@ -19,5 +20,17 @@ export class DesktopService {
 
   clearSession(): Promise<void> {
     return window.electronApi.clearSession();
+  }
+
+  savePosts(posts: Post[]): Promise<void> {
+    return window.electronApi.savePosts(posts);
+  }
+
+  getPostsByUserId(userId: number): Promise<Post[]> {
+    return window.electronApi.getPostsByUserId(userId);
+  }
+
+  updatePostComments(postId: number, comments: number): Promise<void> {
+    return window.electronApi.updatePostComments(postId, comments);
   }
 }

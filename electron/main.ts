@@ -38,6 +38,24 @@ app.whenReady().then(() => {
     database.clearActiveSession();
   });
 
+  ipcMain.handle(
+    'posts:save',
+    (
+      _,
+      posts: { id: number; userId: number; title: string; body: string; comments: number | null }[],
+    ) => {
+      database.savePosts(posts);
+    },
+  );
+
+  ipcMain.handle('posts:get-by-user-id', (_, userId: number) => {
+    return database.getPostsByUserId(userId);
+  });
+
+  ipcMain.handle('posts:update-comments', (_, postId: number, comments: number) => {
+    database.updatePostComments(postId, comments);
+  });
+
   createWindow();
 
   app.on('activate', () => {

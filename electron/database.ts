@@ -8,6 +8,14 @@ export interface DbUser {
   email: string;
 }
 
+export interface DbPost {
+  id: number;
+  userId: number;
+  title: string;
+  body: string;
+  comments: number | null;
+}
+
 export class AppDatabase {
   private readonly db: Database.Database;
 
@@ -31,6 +39,15 @@ export class AppDatabase {
       CREATE TABLE IF NOT EXISTS session (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         user_id INTEGER NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        comments INTEGER NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
       );
     `);
@@ -79,5 +96,57 @@ export class AppDatabase {
       .get() as DbUser | undefined;
 
     return row ?? null;
+  }
+
+  savePosts(posts: DbPost[]): void {
+    const statement = this.db.prepare(`
+    INSERT INTO posts (id, user_id, title, body, comments)
+    VALUES (@id, @userId, @title, @body, @comments)
+    ON CONFLICT(id) DO UPDATE SET
+      user_id = excluded.user_id,
+      title = excluded.title,
+      body = excluded.body,
+      comments = excluded.comments
+  `);
+
+    const transaction = this.db.transaction((postsToSave: DbPost[]) => {
+      for (const post of postsToSave) {
+        statement.run(post);
+      }
+    });
+
+    transaction(posts);
+  }
+
+  getPostsByUserId(userId: number): DbPost[] {
+    const rows = this.db
+      .prepare(
+        `
+      SELECT
+        id,
+        user_id as userId,
+        title,
+        body,
+        comments
+      FROM posts
+      WHERE user_id = ?
+      ORDER BY id ASC
+    `,
+      )
+      .all(userId) as DbPost[];
+
+    return rows;
+  }
+
+  updatePostComments(postId: number, comments: number): void {
+    this.db
+      .prepare(
+        `
+      UPDATE posts
+      SET comments = ?
+      WHERE id = ?
+    `,
+      )
+      .run(comments, postId);
   }
 }

@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
+import { PostsFacade } from '../../data-access/posts-facade.service';
 
 @Component({
   selector: 'app-posts-page',
@@ -13,13 +14,40 @@ import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
       }
 
       <button type="button" (click)="signOut()">Sign out</button>
+
+      @if (postsFacade.isLoading()) {
+        <p>Loading posts...</p>
+      }
+
+      @if (postsFacade.errorMessage()) {
+        <p>{{ postsFacade.errorMessage() }}</p>
+      }
+
+      @if (postsFacade.posts().length > 0) {
+        <ul>
+          @for (post of postsFacade.posts(); track post.id) {
+            <li>
+              <h2>{{ post.title }}</h2>
+              <p>{{ post.body }}</p>
+              <p>Comments: {{ post.comments ?? 'Not counted yet' }}</p>
+            </li>
+          }
+        </ul>
+      } @else if (!postsFacade.isLoading()) {
+        <p>No posts found.</p>
+      }
     </main>
   `,
 })
-export class PostsPageComponent {
+export class PostsPageComponent implements OnInit {
   protected readonly authFacade = inject(AuthFacade);
+  protected readonly postsFacade = inject(PostsFacade);
 
   private readonly router = inject(Router);
+
+  async ngOnInit(): Promise<void> {
+    await this.postsFacade.loadPosts();
+  }
 
   async signOut(): Promise<void> {
     await this.authFacade.signOut();
