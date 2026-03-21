@@ -1,1 +1,61 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --bg-0: #f4f6ef;
+  --bg-1: #dce7db;
+  --bg-2: #f5ece4;
+  --surface: #fffdf8;
+  --surface-muted: #f7f2ea;
+  --text-strong: #1f2a21;
+  --text-muted: #57635a;
+  --line: #d7dcd4;
+  --brand: #1f8f63;
+  --brand-strong: #136949;
+  --brand-soft: #d7f0e4;
+  --danger: #b74141;
+  --shadow-soft: 0 14px 40px rgba(37, 45, 39, 0.12);
+  --shadow-card: 0 8px 24px rgba(31, 42, 33, 0.08);
+  --radius-lg: 22px;
+  --radius-md: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Avenir Next', 'Trebuchet MS', 'Gill Sans', sans-serif;
+  color: var(--text-strong);
+  background:
+    radial-gradient(1100px 520px at 8% -12%, rgba(31, 143, 99, 0.22), transparent 62%),
+    radial-gradient(900px 430px at 100% 2%, rgba(183, 65, 65, 0.14), transparent 63%),
+    linear-gradient(150deg, var(--bg-0), var(--bg-1) 52%, var(--bg-2));
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', 'Trebuchet MS', sans-serif;
+  letter-spacing: 0.01em;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
