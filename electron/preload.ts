@@ -14,6 +14,13 @@ export interface ElectronPost {
   comments: number | null;
 }
 
+export interface ElectronLogEntry {
+  level: 'info' | 'warn' | 'error';
+  source: string;
+  message: string;
+  context?: Record<string, string | number | boolean | null | undefined>;
+}
+
 export interface ElectronApi {
   getAppVersion: () => Promise<string>;
   getSession: () => Promise<ElectronUser | null>;
@@ -22,6 +29,7 @@ export interface ElectronApi {
   savePosts: (posts: ElectronPost[]) => Promise<void>;
   getPostsByUserId: (userId: number) => Promise<ElectronPost[]>;
   updatePostComments: (postId: number, comments: number) => Promise<void>;
+  log: (entry: ElectronLogEntry) => Promise<void>;
 }
 
 const electronApi: ElectronApi = {
@@ -33,6 +41,7 @@ const electronApi: ElectronApi = {
   getPostsByUserId: (userId) => ipcRenderer.invoke('posts:get-by-user-id', userId),
   updatePostComments: (postId, comments) =>
     ipcRenderer.invoke('posts:update-comments', postId, comments),
+  log: (entry) => ipcRenderer.invoke('log:write', entry),
 };
 
 contextBridge.exposeInMainWorld('electronApi', electronApi);

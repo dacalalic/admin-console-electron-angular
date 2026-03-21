@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../../auth/data-access/auth-facade.service';
 import { PostsFacade } from '../../data-access/posts-facade.service';
@@ -28,9 +28,20 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
           <p class="status error">{{ postsFacade.errorMessage() }}</p>
         }
 
-        @if (postsFacade.posts().length > 0) {
+        <div class="search-wrap">
+          <label for="post-search">Search posts</label>
+          <input
+            id="post-search"
+            type="search"
+            placeholder="Search by title or body..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        @if (filteredPosts().length > 0) {
           <ul class="posts-grid">
-            @for (post of postsFacade.posts(); track post.id) {
+            @for (post of filteredPosts(); track post.id) {
               <li class="post-card">
                 <article>
                   <h2>{{ post.title }}</h2>
@@ -52,6 +63,8 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
               </li>
             }
           </ul>
+        } @else if (!postsFacade.isLoading() && postsFacade.posts().length > 0) {
+          <p class="status">No posts match your search.</p>
         } @else if (!postsFacade.isLoading()) {
           <p class="status">No posts found.</p>
         }
@@ -133,6 +146,33 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
         color: var(--danger);
         border: 1px solid #f2c7bf;
         background: #fff2ef;
+      }
+
+      .search-wrap {
+        margin-top: 0.85rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .search-wrap label {
+        font-size: 0.84rem;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .search-wrap input {
+        border: 1px solid #bfc6bd;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--text-strong);
+        border-radius: 11px;
+        padding: 0.66rem 0.8rem;
+        outline: none;
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+      }
+
+      .search-wrap input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(31, 143, 99, 0.2);
       }
 
       .posts-grid {
@@ -221,6 +261,20 @@ import { PostsFacade } from '../../data-access/posts-facade.service';
 export class PostsPageComponent implements OnInit {
   protected readonly authFacade = inject(AuthFacade);
   protected readonly postsFacade = inject(PostsFacade);
+  protected readonly searchQuery = signal('');
+  protected readonly filteredPosts = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const posts = this.postsFacade.posts();
+
+    if (!query) {
+      return posts;
+    }
+
+    return posts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(query) || post.body.toLowerCase().includes(query),
+    );
+  });
 
   private readonly router = inject(Router);
 
@@ -230,6 +284,11 @@ export class PostsPageComponent implements OnInit {
 
   async countComments(postId: number): Promise<void> {
     await this.postsFacade.countComments(postId);
+  }
+
+  onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.searchQuery.set(target?.value ?? '');
   }
 
   async signOut(): Promise<void> {
