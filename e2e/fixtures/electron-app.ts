@@ -15,7 +15,8 @@ type ElectronFixtures = {
 };
 
 export const test = base.extend<ElectronFixtures>({
-  electronApp: async (_fixtures, use) => {
+  // eslint-disable-next-line no-empty-pattern
+  electronApp: async ({}, use) => {
     const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'admin-console-e2e-'));
     const launchEnv = { ...process.env, E2E_USER_DATA_DIR: userDataDir };
     delete launchEnv.ELECTRON_RUN_AS_NODE;

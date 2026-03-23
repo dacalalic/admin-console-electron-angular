@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { DesktopService } from '../../../core/services/desktop.service';
 import { LoggerService } from '../../../core/logging/logger.service';
@@ -90,7 +91,9 @@ describe('AuthFacade', () => {
     await facade.restoreSession();
     expect(facade.currentUser()).toEqual(persistedUser);
 
-    authApiServiceMock.getUserById.mockReturnValue(of(null));
+    authApiServiceMock.getUserById.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found' })),
+    );
     const result = await facade.signIn(999);
 
     expect(result).toBe(false);

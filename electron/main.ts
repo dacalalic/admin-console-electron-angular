@@ -12,7 +12,7 @@ interface LogEntry {
   context?: Record<string, string | number | boolean | null | undefined>;
 }
 
-let database: AppDatabase;
+let database: AppDatabase | null = null;
 const e2eUserDataDir = process.env.E2E_USER_DATA_DIR;
 
 if (e2eUserDataDir) {
@@ -53,6 +53,24 @@ function logError(
   context?: Record<string, string | number | boolean | null | undefined>,
 ): void {
   writeStructuredLog({ level: 'error', source, message, context });
+}
+
+function closeDatabase(): void {
+  if (database === null) {
+    return;
+  }
+
+  database.close();
+  database = null;
+  logInfo('app-flow', 'Database connection closed.');
+}
+
+function getDatabase(): AppDatabase {
+  if (database === null) {
+    throw new Error('Database has not been initialized.');
+  }
+
+  return database;
 }
 
 process.on('uncaughtException', (error) => {
@@ -125,18 +143,18 @@ app.whenReady().then(() => {
 
   ipcMain.handle('session:get', () => {
     logInfo('ipc', 'Handled session:get request.');
-    return database.getActiveSessionUser();
+    return getDatabase().getActiveSessionUser();
   });
 
   ipcMain.handle('session:save', (_, user: { id: number; name: string; email: string }) => {
     logInfo('ipc', 'Handled session:save request.', { userId: user.id });
-    database.saveUser(user);
-    database.setActiveSession(user.id);
+    getDatabase().saveUser(user);
+    getDatabase().setActiveSession(user.id);
   });
 
   ipcMain.handle('session:clear', () => {
     logInfo('ipc', 'Handled session:clear request.');
-    database.clearActiveSession();
+    getDatabase().clearActiveSession();
   });
 
   ipcMain.handle(
@@ -146,18 +164,18 @@ app.whenReady().then(() => {
       posts: { id: number; userId: number; title: string; body: string; comments: number | null }[],
     ) => {
       logInfo('ipc', 'Handled posts:save request.', { postsCount: posts.length });
-      database.savePosts(posts);
+      getDatabase().savePosts(posts);
     },
   );
 
   ipcMain.handle('posts:get-by-user-id', (_, userId: number) => {
     logInfo('ipc', 'Handled posts:get-by-user-id request.', { userId });
-    return database.getPostsByUserId(userId);
+    return getDatabase().getPostsByUserId(userId);
   });
 
   ipcMain.handle('posts:update-comments', (_, postId: number, comments: number) => {
     logInfo('ipc', 'Handled posts:update-comments request.', { postId, comments });
-    database.updatePostComments(postId, comments);
+    getDatabase().updatePostComments(postId, comments);
   });
 
   createWindow();
@@ -168,6 +186,10 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+});
+
+app.on('before-quit', () => {
+  closeDatabase();
 });
 
 app.on('window-all-closed', () => {

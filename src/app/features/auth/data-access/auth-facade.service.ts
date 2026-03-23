@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { DesktopService } from '../../../core/services/desktop.service';
@@ -34,20 +35,19 @@ export class AuthFacade {
     try {
       const user = await firstValueFrom(this.authApiService.getUserById(userId));
 
-      if (!user) {
-        this.currentUserSignal.set(null);
-        await this.desktopService.clearSession();
-        this.logger.warn('app-flow', 'Sign-in failed because user was not found.', { userId });
-        return false;
-      }
-
       this.currentUserSignal.set(user);
       await this.desktopService.saveSession(user);
       this.logger.info('app-flow', 'Sign-in succeeded.', { userId: user.id });
       return true;
-    } catch {
+    } catch (error: unknown) {
       this.currentUserSignal.set(null);
       await this.desktopService.clearSession();
+
+      if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound) {
+        this.logger.warn('app-flow', 'Sign-in failed because user was not found.', { userId });
+        return false;
+      }
+
       this.logger.error('app-flow', 'Sign-in failed due to request/storage error.', { userId });
       return false;
     }

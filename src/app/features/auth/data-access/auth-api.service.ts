@@ -15,7 +15,7 @@ interface JsonPlaceholderUserDto {
 export class AuthApiService {
   private readonly http = inject(HttpClient);
 
-  getUserById(userId: number): Observable<User | null> {
+  getUserById(userId: number): Observable<User> {
     return this.http
       .get<JsonPlaceholderUserDto>(`https://jsonplaceholder.typicode.com/users/${userId}`)
       .pipe(
